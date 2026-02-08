@@ -32,7 +32,8 @@ export class AttendanceService {
       throw new NotFoundException('Employee not found');
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     if (dto.type === AttendanceType.ARRIVAL) {
       const existing = await this.attendanceRepository.findOne({
@@ -46,7 +47,16 @@ export class AttendanceService {
         date: new Date(today),
         arrivalTime: new Date().toTimeString().slice(0, 8),
       });
-      const saved = await this.attendanceRepository.save(attendance);
+      let saved;
+      try {
+        saved = await this.attendanceRepository.save(attendance);
+      } catch (error: unknown) {
+        const err = error as { code?: string };
+        if (err.code === '23505') {
+          throw new BadRequestException('Arrival already recorded for today');
+        }
+        throw error;
+      }
       await this.emailQueue.add('notify', {
         employee,
         attendance: saved,

@@ -1,4 +1,11 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -29,7 +36,11 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
   logout(@Req() req: { headers: { authorization?: string } }) {
-    const token = req.headers.authorization?.replace('Bearer ', '') ?? '';
+    const authHeader = req.headers.authorization ?? '';
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      throw new BadRequestException('Authorization token is required');
+    }
     return this.authService.logout(token);
   }
 
