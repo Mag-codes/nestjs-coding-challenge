@@ -54,7 +54,7 @@ npm run test
 ## Deployment
 
 1. Set `NODE_ENV=production`
-2. Set `synchronize: false` and use migrations for production DB
+2. Set `synchronize: false` and run migrations for production DB (e.g. `npm run migration:run` when migration scripts are configured)
 3. Configure all env vars from `.env.example`
 4. Build: `npm run build`
 5. Run: `npm run start:prod`

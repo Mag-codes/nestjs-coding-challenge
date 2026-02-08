@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -52,19 +52,28 @@ export class EmployeeService {
   async update(id: string, dto: UpdateEmployeeDto) {
     await this.findOne(id);
     if (dto.email || dto.employeeIdentifier) {
-      const qb = this.employeeRepository
-        .createQueryBuilder('e')
-        .where('e.id != :id', { id });
-      if (dto.email) qb.andWhere('e.email = :email', { email: dto.email });
-      if (dto.employeeIdentifier)
-        qb.andWhere('e.employeeIdentifier = :ei', {
-          ei: dto.employeeIdentifier,
+      if (dto.email) {
+        const existingByEmail = await this.employeeRepository.findOne({
+          where: { email: dto.email, id: Not(id) },
         });
-      const existing = await qb.getOne();
-      if (existing) {
-        throw new ConflictException(
-          'Employee with this email or identifier already exists',
-        );
+        if (existingByEmail) {
+          throw new ConflictException(
+            'Employee with this email or identifier already exists',
+          );
+        }
+      }
+      if (dto.employeeIdentifier) {
+        const existingByIdentifier = await this.employeeRepository.findOne({
+          where: {
+            employeeIdentifier: dto.employeeIdentifier,
+            id: Not(id),
+          },
+        });
+        if (existingByIdentifier) {
+          throw new ConflictException(
+            'Employee with this email or identifier already exists',
+          );
+        }
       }
     }
     await this.employeeRepository.update(id, dto);

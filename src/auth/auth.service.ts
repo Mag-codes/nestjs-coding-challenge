@@ -53,14 +53,15 @@ export class AuthService {
 
   async logout(token: string) {
     const decoded = this.jwtService.decode(token);
-    const exp = decoded?.exp;
-    if (exp) {
-      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-      await this.blacklistRepository.save({
-        tokenHash,
-        expiresAt: new Date(exp * 1000),
-      });
+    if (!decoded || typeof decoded !== 'object' || !('exp' in decoded)) {
+      throw new UnauthorizedException('Invalid token');
     }
+    const exp = (decoded as { exp: number }).exp;
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    await this.blacklistRepository.save({
+      tokenHash,
+      expiresAt: new Date(exp * 1000),
+    });
     return { message: 'Logged out successfully' };
   }
 

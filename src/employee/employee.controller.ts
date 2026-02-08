@@ -31,10 +31,12 @@ export class EmployeeController {
   @Get()
   @ApiResponse({ status: 200, description: 'List of employees' })
   findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.employeeService.findAll(
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 10,
-    );
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const safePage = Number.isNaN(pageNum) || pageNum < 1 ? 1 : pageNum;
+    const safeLimit =
+      Number.isNaN(limitNum) || limitNum < 1 ? 10 : Math.min(limitNum, 100);
+    return this.employeeService.findAll(safePage, safeLimit);
   }
 
   @Get(':id')
